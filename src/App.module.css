@@ -49,6 +49,38 @@
   font-size: 0.84rem;
 }
 
+.badge[data-celebrate='true'],
+.badge[data-level-bounce='true'] {
+  animation: badgeBounce 0.5s ease-out;
+}
+
+.badge[data-celebrate='true'] .badgeNumber {
+  color: #2563eb;
+  transition: color 1s ease-out;
+}
+
+.badge:not([data-celebrate='true']) .badgeNumber {
+  transition: color 0.2s ease-out;
+}
+
+@keyframes badgeBounce {
+  0% {
+    transform: scale(1);
+  }
+  30% {
+    transform: scale(1.2);
+  }
+  55% {
+    transform: scale(0.95);
+  }
+  75% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
 .gridSection {
   --cell-size: 132px;
   width: calc(4 * var(--cell-size));
@@ -80,5 +112,24 @@
 
   .gridSection {
     --cell-size: 88px;
+  }
+}
+
+/* Narrow phones (e.g. iPhone 375×667): fit grid in viewport */
+@media (max-width: 400px) {
+  .appShell {
+    padding: 10px;
+  }
+
+  .card {
+    padding: 8px;
+  }
+
+  .headerSection {
+    --cell-size: 80px;
+  }
+
+  .gridSection {
+    --cell-size: 80px;
   }
 }

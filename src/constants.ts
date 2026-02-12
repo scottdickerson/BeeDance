@@ -33,6 +33,17 @@ export function moveCell(cell: Cell, direction: Direction): Cell {
   return { row: cell.row + dRow, col: cell.col + dCol };
 }
 
+/** Direction from one cell to an adjacent cell; undefined if not exactly one step. */
+export function cellToDirection(from: Cell, to: Cell): Direction | undefined {
+  const dRow = to.row - from.row;
+  const dCol = to.col - from.col;
+  if (dRow === -1 && dCol === 0) return 'up';
+  if (dRow === 1 && dCol === 0) return 'down';
+  if (dRow === 0 && dCol === -1) return 'left';
+  if (dRow === 0 && dCol === 1) return 'right';
+  return undefined;
+}
+
 export function randomInt(maxExclusive: number): number {
   return Math.floor(Math.random() * maxExclusive);
 }

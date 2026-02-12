@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useMemo } from 'react';
 import { useAppContext } from '../context/AppContext';
-import { GRID_SIZE, buildPath, type Cell } from '../constants';
+import { GRID_SIZE, buildPath, cellToDirection, type Cell } from '../constants';
 import { Bee } from './Bee';
 import { VictoryDance } from './VictoryDance';
 import styles from './Grid.module.css';
@@ -25,7 +25,8 @@ export function Grid(): JSX.Element {
     startCell,
     danceSequence,
     playerStepIndex,
-    lastCompletedPath
+    lastCompletedPath,
+    submitMove
   } = useAppContext();
 
   const leaderTrailPoints = useMemo(
@@ -97,9 +98,46 @@ export function Grid(): JSX.Element {
     []
   );
 
+  const gridRef = useRef<HTMLDivElement>(null);
+
+  const handleGridPointer = (e: React.PointerEvent): void => {
+    if (phase !== 'player' || isRecovering) return;
+    const target = e.target as HTMLElement;
+    let row: number;
+    let col: number;
+    const cellEl = target.closest(`.${styles.cell}`);
+    if (cellEl) {
+      row = Number(cellEl.getAttribute('data-row'));
+      col = Number(cellEl.getAttribute('data-col'));
+    } else if (gridRef.current) {
+      const rect = gridRef.current.getBoundingClientRect();
+      const cellSize = rect.width / GRID_SIZE;
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      col = Math.floor(x / cellSize);
+      row = Math.floor(y / cellSize);
+      if (row < 0 || row >= GRID_SIZE || col < 0 || col >= GRID_SIZE) return;
+    } else {
+      return;
+    }
+    if (Number.isNaN(row) || Number.isNaN(col)) return;
+    const direction = cellToDirection(playerPos, { row, col });
+    if (direction) {
+      e.preventDefault();
+      submitMove(direction);
+    }
+  };
+
   return (
     <div className={styles.gridWrap}>
-      <div className={styles.grid} role="application" aria-label="Bee memory grid">
+      <div
+        ref={gridRef}
+        className={styles.grid}
+        data-interactive={phase === 'player' && !isRecovering}
+        role="application"
+        aria-label="Bee memory grid"
+        onPointerDown={handleGridPointer}
+      >
         <svg
           className={styles.trailOverlay}
           viewBox="0 0 4 4"
@@ -135,9 +173,21 @@ export function Grid(): JSX.Element {
             />
           )}
         </svg>
-        {Array.from({ length: GRID_SIZE * GRID_SIZE }, (_, idx) => (
-          <div key={idx} className={styles.cell} />
-        ))}
+        {Array.from({ length: GRID_SIZE * GRID_SIZE }, (_, idx) => {
+          const row = Math.floor(idx / GRID_SIZE);
+          const col = idx % GRID_SIZE;
+          return (
+            <div
+              key={idx}
+              className={styles.cell}
+              data-row={row}
+              data-col={col}
+              role="button"
+              tabIndex={-1}
+              aria-label={`Cell ${row + 1}, ${col + 1}`}
+            />
+          );
+        })}
 
         {atEndPair ? (
           <VictoryDance cell={showBeePos} />

@@ -56,6 +56,19 @@ type AppAction =
   | { type: 'RESTART_ROUND' }
   | { type: 'RESET_GAME' };
 
+const HIGH_SCORE_STORAGE_KEY = 'beecool-highscore';
+
+function readStoredHighScore(): number {
+  try {
+    const stored = localStorage.getItem(HIGH_SCORE_STORAGE_KEY);
+    if (stored == null) return 0;
+    const n = parseInt(stored, 10);
+    return Number.isNaN(n) || n < 0 ? 0 : n;
+  } catch {
+    return 0;
+  }
+}
+
 function createRoundSeed(): { startCell: Cell; danceSequence: Direction[] } {
   const start = randomStartCell();
   return {
@@ -69,7 +82,7 @@ function createInitialState(): AppState {
   return {
     secondsPerStep: 1.3,
     level: 1,
-    highScore: 0,
+    highScore: readStoredHighScore(),
     phase: 'showing',
     startCell: seed.startCell,
     danceSequence: seed.danceSequence,
@@ -122,11 +135,12 @@ function appReducer(state: AppState, action: AppAction): AppState {
     case 'LEVEL_ADVANCE': {
       const nextSequence = extendDance(state.danceSequence, state.startCell);
       const nextLevel = state.level + 1;
+      const stepsCompleted = state.danceSequence.length;
       return {
         ...state,
         danceSequence: nextSequence,
         level: nextLevel,
-        highScore: Math.max(state.highScore, nextLevel),
+        highScore: Math.max(state.highScore, stepsCompleted),
         phase: 'showing',
         showIndex: 0,
         playerPos: state.startCell,
@@ -180,6 +194,7 @@ export interface AppContextValue {
   lastCompletedPath: Cell[];
   restartGame: () => void;
   resetGame: () => void;
+  submitMove: (direction: Direction) => void;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -208,17 +223,26 @@ export function AppProvider({
   const showBeePos = dancePath[Math.min(state.showIndex, dancePath.length - 1)] ?? state.startCell;
 
   const totalPlayerTime = useMemo(
-    () => 30 + Math.max(0, (state.danceSequence.length - STARTING_MOVES) * 5),
+    () => 10 + Math.max(0, (state.danceSequence.length - STARTING_MOVES) * 5),
     [state.danceSequence.length]
   );
 
   const stateRef = useRef(state);
+  const tryMoveRef = useRef<(direction: Direction) => void>(() => {});
   const mistakeTimerRef = useRef<number | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
 
   useEffect(() => {
     stateRef.current = state;
   }, [state]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(HIGH_SCORE_STORAGE_KEY, String(state.highScore));
+    } catch {
+      /* ignore storage errors */
+    }
+  }, [state.highScore]);
 
   useEffect(() => {
     return () => {
@@ -320,14 +344,11 @@ export function AppProvider({
       }, MISTAKE_PAUSE_MS);
     };
 
-    const onKeyDown = (event: KeyboardEvent): void => {
-      const direction = KEY_TO_DIRECTION[event.key];
+    const tryMove = (direction: Direction): void => {
       const current = stateRef.current;
-      if (!direction || !gameActive || current.phase !== 'player' || current.isRecovering) {
+      if (!gameActive || current.phase !== 'player' || current.isRecovering) {
         return;
       }
-
-      event.preventDefault();
 
       const expected = current.danceSequence[current.playerStepIndex];
       const nextPos = moveCell(current.playerPos, direction);
@@ -348,6 +369,15 @@ export function AppProvider({
       });
     };
 
+    tryMoveRef.current = tryMove;
+
+    const onKeyDown = (event: KeyboardEvent): void => {
+      const direction = KEY_TO_DIRECTION[event.key];
+      if (!direction) return;
+      event.preventDefault();
+      tryMove(direction);
+    };
+
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [gameActive]);
@@ -358,7 +388,7 @@ export function AppProvider({
       : state.phase === 'player'
         ? state.isRecovering
           ? 'Wrong move. Bee is stunned...'
-          : 'Repeat the dance with arrow keys'
+          : 'Repeat the dance: arrow keys or tap/click cells'
         : state.phase === 'level-clear'
           ? 'Sweet! Next dance gets longer.'
           : 'Buzz over. Press restart.';
@@ -403,7 +433,8 @@ export function AppProvider({
       isRecovering: state.isRecovering,
       lastCompletedPath: state.lastCompletedPath,
       restartGame,
-      resetGame
+      resetGame,
+      submitMove: (direction: Direction) => tryMoveRef.current(direction)
     }),
     [state, dancePath, statusText, playerProgress, honeyProgress, showBeePos]
   );

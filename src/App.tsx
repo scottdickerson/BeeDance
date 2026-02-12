@@ -27,6 +27,10 @@ function AppContent({
   const { level, highScore, phase, resetGame } = useAppContext();
   const idleTimerRef = useRef<number | null>(null);
   const previousTitleVisibleRef = useRef(titleVisible);
+  const [celebrateBest, setCelebrateBest] = useState(false);
+  const [celebrateLevel, setCelebrateLevel] = useState(false);
+  const prevHighScoreRef = useRef(highScore);
+  const prevLevelRef = useRef(level);
 
   const handleQuitToTitle = (): void => {
     setTitleVisible(true);
@@ -88,6 +92,26 @@ function AppContent({
     };
   }, [titleVisible, instructionsVisible, phase, setTitleVisible, setInstructionsVisible]);
 
+  useEffect(() => {
+    if (highScore > prevHighScoreRef.current) {
+      setCelebrateBest(true);
+      prevHighScoreRef.current = highScore;
+      const t = window.setTimeout(() => setCelebrateBest(false), 1000);
+      return () => window.clearTimeout(t);
+    }
+    prevHighScoreRef.current = highScore;
+  }, [highScore]);
+
+  useEffect(() => {
+    if (level > prevLevelRef.current) {
+      setCelebrateLevel(true);
+      prevLevelRef.current = level;
+      const t = window.setTimeout(() => setCelebrateLevel(false), 500);
+      return () => window.clearTimeout(t);
+    }
+    prevLevelRef.current = level;
+  }, [level]);
+
   return (
     <div className={styles.appShell}>
       {titleVisible && (
@@ -103,8 +127,22 @@ function AppContent({
         <header className={styles.headerSection}>
           <h1 className={styles.title}>Bee Cool!</h1>
           <div className={styles.topRow}>
-            <div className={styles.badge}>Level {level}</div>
-            <div className={styles.badge}>Best {highScore}</div>
+            <div
+              className={styles.badge}
+              data-level-bounce={celebrateLevel}
+              aria-live="polite"
+              aria-label={`Level ${level}`}
+            >
+              Level {level}
+            </div>
+            <div
+              className={styles.badge}
+              data-celebrate={celebrateBest}
+              aria-live="polite"
+              aria-label={celebrateBest ? `New best: ${highScore}` : `Best ${highScore}`}
+            >
+              Best <span className={styles.badgeNumber}>{highScore}</span>
+            </div>
           </div>
         </header>
 

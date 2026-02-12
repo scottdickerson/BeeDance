@@ -36,6 +36,10 @@ export function CountdownTimer(): JSX.Element {
   const { honeyProgress, timeLeft, phase } = useAppContext();
   const progressAtLevelClearRef = useRef(1);
 
+  if (phase === 'showing') {
+    return <div className={styles.spacer} aria-hidden="true" />;
+  }
+
   if (phase === 'player') {
     progressAtLevelClearRef.current = honeyProgress;
   }

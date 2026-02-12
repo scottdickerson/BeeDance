@@ -6,7 +6,7 @@ This document describes how the Bee Cool! memory game is structured and how the 
 
 ## Overview
 
-**Bee Cool!** is a browser game where the player watches a “leader” bee trace a path on a 4×4 grid, then must repeat that path using the arrow keys before time runs out. The game is built with **React**, **TypeScript**, and **Vite**. State is centralized in **AppContext**; the grid, timer, and overlays are separate components that read from context.
+**Bee Cool!** is a browser game where the player watches a “leader” bee trace a path on a 4×4 grid, then must repeat that path using the arrow keys or by tapping/clicking grid cells before time runs out. The game is built with **React**, **TypeScript**, and **Vite**. State is centralized in **AppContext**; the grid, timer, and overlays are separate components that read from context.
 
 ---
 
@@ -16,7 +16,7 @@ This document describes how the Bee Cool! memory game is structured and how the 
 2. **Instructions** (optional) → “Back” returns to title; “Start game” begins the round.
 3. **Round loop**
    - **Showing** — Leader bee steps through the dance path; countdown does not run.
-   - **Player** — User repeats the path with arrow keys; countdown runs (30s base + 5s per extra step).
+   - **Player** — User repeats the path with arrow keys or by tapping/clicking grid cells; countdown runs (30s base + 5s per extra step).
    - **Level-clear** — Both bees meet in the final cell; **VictoryDance** overlay plays for 5 seconds, then **LEVEL_ADVANCE** runs.
    - **Game-over** (if time runs out) — Modal with “Restart” and “Quit” (back to title).
 4. After **level-clear**, the next level’s **showing** phase starts with a longer sequence. After **game-over**, the user can restart (new round) or quit to the title screen.
@@ -67,7 +67,7 @@ This document describes how the Bee Cool! memory game is structured and how the 
 Defined in `src/constants.ts`:
 
 - **`showing`** — Leader steps through the sequence; `showIndex` advances on a timer; when done, `BEGIN_PLAYER` runs.
-- **`player`** — User input; `TICK` decrements `timeLeft`; correct key dispatches `PLAYER_SUCCESS` (move or level-clear); wrong key triggers recovery.
+- **`player`** — User input (arrow keys or tap/click on grid cells); `TICK` decrements `timeLeft`; correct move dispatches `PLAYER_SUCCESS` (move or level-clear); wrong move triggers recovery.
 - **`level-clear`** — Celebration; after `LEVEL_CLEAR_MS` (5s), `LEVEL_ADVANCE` extends the dance and goes back to `showing`.
 - **`game-over`** — Time ran out; modal offers Restart (new round) or Quit (title).
 
