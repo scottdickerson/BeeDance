@@ -6,7 +6,6 @@ import { GameOverModal } from './components/GameOverModal';
 import { InstructionsScreen } from './components/InstructionsScreen';
 import { ProgressPattern } from './components/ProgressPattern';
 import { TitleScreen } from './components/TitleScreen';
-import { UrgencyText } from './components/UrgencyText';
 import styles from './App.module.css';
 
 const IDLE_SHOW_TITLE_MS = 120_000;
@@ -24,13 +23,16 @@ function AppContent({
   instructionsVisible,
   setInstructionsVisible
 }: AppContentProps): JSX.Element {
-  const { level, highScore, phase, resetGame } = useAppContext();
+  const { level, highScore, phase, danceSequence, resetGame } = useAppContext();
   const idleTimerRef = useRef<number | null>(null);
   const previousTitleVisibleRef = useRef(titleVisible);
-  const [celebrateBest, setCelebrateBest] = useState(false);
   const [celebrateLevel, setCelebrateLevel] = useState(false);
-  const prevHighScoreRef = useRef(highScore);
   const prevLevelRef = useRef(level);
+
+  const celebrateBest =
+    phase === 'level-clear' && danceSequence.length > highScore;
+  const bestDisplay =
+    celebrateBest ? danceSequence.length : highScore;
 
   const handleQuitToTitle = (): void => {
     setTitleVisible(true);
@@ -97,16 +99,6 @@ function AppContent({
   }, [titleVisible, instructionsVisible, phase, setTitleVisible, setInstructionsVisible]);
 
   useEffect(() => {
-    if (highScore > prevHighScoreRef.current) {
-      setCelebrateBest(true);
-      prevHighScoreRef.current = highScore;
-      const t = window.setTimeout(() => setCelebrateBest(false), 1000);
-      return () => window.clearTimeout(t);
-    }
-    prevHighScoreRef.current = highScore;
-  }, [highScore]);
-
-  useEffect(() => {
     if (level > prevLevelRef.current) {
       setCelebrateLevel(true);
       prevLevelRef.current = level;
@@ -138,9 +130,9 @@ function AppContent({
               className={styles.badge}
               data-celebrate={celebrateBest}
               aria-live="polite"
-              aria-label={celebrateBest ? `New best: ${highScore}` : `Best ${highScore}`}
+              aria-label={celebrateBest ? `New best: ${bestDisplay}` : `Best ${bestDisplay}`}
             >
-              Best <span className={styles.badgeNumber}>{highScore}</span>
+              Best <span className={styles.badgeNumber}>{bestDisplay}</span>
             </div>
           </div>
         </header>
@@ -148,9 +140,6 @@ function AppContent({
         <section className={styles.gridSection} aria-label="Game area">
           <ProgressPattern />
           <Grid />
-          <div className={styles.urgencyWrap}>
-            <UrgencyText />
-          </div>
           <CountdownTimer />
         </section>
       </div>

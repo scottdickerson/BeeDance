@@ -2,13 +2,25 @@
   position: relative;
   margin-top: 14px;
   margin-bottom: 0;
+  min-height: 76px;
 }
 
-/* Reserves space when timer is hidden (leader bee moving) to prevent layout shift */
-.spacer {
-  margin-top: 14px;
-  margin-bottom: 0;
-  min-height: calc(44px + 2px + 1.25em);
+.fadedIn {
+  opacity: 1;
+  transition: opacity 220ms ease;
+}
+
+.fadedOut {
+  opacity: 0;
+  transition: opacity 220ms ease;
+}
+
+.urgencyInline {
+  min-height: 26px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  margin-bottom: 2px;
 }
 
 .track {
@@ -99,6 +111,7 @@
 }
 
 .meterText {
+  min-height: 1.05em;
   margin-top: 2px;
   text-align: right;
   font-variant-numeric: tabular-nums;

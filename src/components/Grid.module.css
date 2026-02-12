@@ -23,47 +23,6 @@
   tap-highlight-color: transparent;
 }
 
-.tapHere {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: var(--cell-size);
-  height: var(--cell-size);
-  display: grid;
-  place-items: center;
-  pointer-events: none;
-  z-index: 4;
-}
-
-.tapHereLabel {
-  font-family: 'Fredoka', sans-serif;
-  font-size: 1.15rem;
-  font-weight: 600;
-  color: #1e88e5;
-  text-shadow: 0 0 2px rgba(255, 255, 255, 0.9);
-  animation: tapHereBounce 2.4s ease-in-out infinite;
-}
-
-@keyframes tapHereBounce {
-  0%,
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  25% {
-    opacity: 1;
-    transform: scale(1.15);
-  }
-  50% {
-    opacity: 0.9;
-    transform: scale(0.95);
-  }
-  75% {
-    opacity: 1;
-    transform: scale(1.08);
-  }
-}
-
 .trailOverlay {
   position: absolute;
   inset: 0;
@@ -86,6 +45,36 @@
   border: 1px solid rgba(219, 167, 52, 0.22);
   -webkit-tap-highlight-color: transparent;
   tap-highlight-color: transparent;
+}
+
+.cellPulse {
+  animation: cellPulseFlash 220ms ease-out;
+}
+
+.cellWrongPulse {
+  animation: cellWrongPulseFlash 220ms ease-out;
+}
+
+@keyframes cellPulseFlash {
+  0% {
+    background: rgba(107, 218, 210, 0.16);
+    box-shadow: inset 0 0 0 2px rgba(33, 157, 150, 0.45);
+  }
+  100% {
+    background: transparent;
+    box-shadow: inset 0 0 0 0 rgba(33, 157, 150, 0);
+  }
+}
+
+@keyframes cellWrongPulseFlash {
+  0% {
+    background: rgba(255, 110, 110, 0.2);
+    box-shadow: inset 0 0 0 2px rgba(213, 53, 53, 0.56);
+  }
+  100% {
+    background: transparent;
+    box-shadow: inset 0 0 0 0 rgba(213, 53, 53, 0);
+  }
 }
 
 .actor {

@@ -33,7 +33,12 @@ export function InstructionsScreen({ onBack, onStart }: InstructionsScreenProps)
             <strong>Watch the bee dance.</strong> The leader bee will show you a path on the grid.
           </p>
           <p className={styles.paragraph}>
-            <strong>Repeat the dance.</strong> Tap or click the grid space you want your blue bee to move to (or use arrow keys or WASD). When it's your turn, follow the same path before time runs out.
+            <strong>Repeat the dance.</strong>{' '}
+            <span className={styles.tapHint}>
+              Tap or click the grid space you want your blue bee to move to
+            </span>{' '}
+            (or use arrow keys or WASD). When it&apos;s your turn, follow the same path before
+            time runs out.
           </p>
           <p className={styles.paragraph}>
             Complete the pattern to advance. Each level adds one more step—don’t get stung by the clock!

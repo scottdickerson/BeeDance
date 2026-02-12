@@ -92,14 +92,6 @@
   align-items: stretch;
 }
 
-.urgencyWrap {
-  min-height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 4px;
-}
-
 @media (max-width: 720px) {
   .card {
     padding: 10px;

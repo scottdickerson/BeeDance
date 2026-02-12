@@ -11,7 +11,6 @@ import type { Cell, Direction, Phase } from '../constants';
 import {
   buildPath,
   extendDance,
-  FIRST_LEVEL_SESSION_KEY,
   inBounds,
   KEY_TO_DIRECTION,
   LEVEL_CLEAR_MS,
@@ -38,6 +37,7 @@ interface AppState {
   playerStepIndex: number;
   timeLeft: number;
   isRecovering: boolean;
+  lastWrongCell: Cell | null;
   lastCompletedPath: Cell[];
 }
 
@@ -46,7 +46,7 @@ type AppAction =
   | { type: 'SET_SHOW_INDEX'; value: number }
   | { type: 'BEGIN_PLAYER'; totalTime: number }
   | { type: 'TICK'; amount: number }
-  | { type: 'START_RECOVERY' }
+  | { type: 'START_RECOVERY'; wrongCell: Cell | null }
   | { type: 'END_RECOVERY' }
   | {
       type: 'PLAYER_SUCCESS';
@@ -94,6 +94,7 @@ function createInitialState(): AppState {
     playerStepIndex: 0,
     timeLeft: 0,
     isRecovering: false,
+    lastWrongCell: null,
     lastCompletedPath: []
   };
 }
@@ -111,6 +112,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
         playerPos: state.startCell,
         playerStepIndex: 0,
         isRecovering: false,
+        lastWrongCell: null,
         timeLeft: action.totalTime
       };
     case 'TICK': {
@@ -124,15 +126,16 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return { ...state, timeLeft: next };
     }
     case 'START_RECOVERY':
-      return { ...state, isRecovering: true };
+      return { ...state, isRecovering: true, lastWrongCell: action.wrongCell };
     case 'END_RECOVERY':
-      return { ...state, isRecovering: false };
+      return { ...state, isRecovering: false, lastWrongCell: null };
     case 'PLAYER_SUCCESS':
       return {
         ...state,
         playerPos: action.nextPos,
         playerStepIndex: action.nextIndex,
         phase: action.complete ? 'level-clear' : state.phase,
+        lastWrongCell: null,
         lastCompletedPath: action.complete ? action.completedPath : state.lastCompletedPath
       };
     case 'LEVEL_ADVANCE': {
@@ -149,6 +152,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
         playerPos: state.startCell,
         playerStepIndex: 0,
         isRecovering: false,
+        lastWrongCell: null,
         timeLeft: 0,
         lastCompletedPath: []
       };
@@ -166,6 +170,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
         playerStepIndex: 0,
         timeLeft: 0,
         isRecovering: false,
+        lastWrongCell: null,
         lastCompletedPath: []
       };
     }
@@ -196,6 +201,7 @@ export interface AppContextValue {
   playerPos: Cell;
   isRecovering: boolean;
   lastCompletedPath: Cell[];
+  lastWrongCell: Cell | null;
   restartGame: () => void;
   resetGame: () => void;
   submitMove: (direction: Direction) => void;
@@ -237,6 +243,20 @@ export function AppProvider({
   const tryMoveRef = useRef<(direction: Direction) => void>(() => {});
   const mistakeTimerRef = useRef<number | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
+  const lowTimeWarningPlayedRef = useRef(false);
+
+  const getAudioCtx = (): AudioContext | null => {
+    const AudioCtor =
+      window.AudioContext ??
+      (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!AudioCtor) {
+      return null;
+    }
+    if (!audioCtxRef.current) {
+      audioCtxRef.current = new AudioCtor();
+    }
+    return audioCtxRef.current;
+  };
 
   useEffect(() => {
     stateRef.current = state;
@@ -286,17 +306,6 @@ export function AppProvider({
   }, [gameActive, state.phase, state.danceSequence.length, totalPlayerTime]);
 
   useEffect(() => {
-    if (!gameActive || state.phase !== 'player') return;
-    try {
-      if (sessionStorage.getItem(FIRST_LEVEL_SESSION_KEY) == null) {
-        sessionStorage.setItem(FIRST_LEVEL_SESSION_KEY, String(state.level));
-      }
-    } catch {
-      /* ignore */
-    }
-  }, [gameActive, state.phase, state.level]);
-
-  useEffect(() => {
     if (!gameActive || state.phase !== 'player' || state.isRecovering) {
       return;
     }
@@ -321,18 +330,64 @@ export function AppProvider({
   }, [gameActive, state.phase]);
 
   useEffect(() => {
-    const playErrorSound = (): void => {
-      const AudioCtor =
-        window.AudioContext ??
-        (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-      if (!AudioCtor) {
+    if (!gameActive || state.phase !== 'player') {
+      lowTimeWarningPlayedRef.current = false;
+      return;
+    }
+
+    const progress = totalPlayerTime > 0 ? state.timeLeft / totalPlayerTime : 0;
+    if (progress > 0.2 || lowTimeWarningPlayedRef.current) {
+      return;
+    }
+    lowTimeWarningPlayedRef.current = true;
+
+    const ctx = getAudioCtx();
+    if (!ctx) {
+      return;
+    }
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(840, now);
+    osc.frequency.exponentialRampToValueAtTime(620, now + 0.22);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.07, now + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.26);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.27);
+  }, [gameActive, state.phase, state.timeLeft, totalPlayerTime]);
+
+  useEffect(() => {
+    if (!gameActive || state.phase !== 'level-clear') {
+      return;
+    }
+
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (
+        event.key === 'Shift' ||
+        event.key === 'Control' ||
+        event.key === 'Alt' ||
+        event.key === 'Meta'
+      ) {
         return;
       }
+      event.preventDefault();
+      dispatch({ type: 'LEVEL_ADVANCE' });
+    };
 
-      if (!audioCtxRef.current) {
-        audioCtxRef.current = new AudioCtor();
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [gameActive, state.phase]);
+
+  useEffect(() => {
+    const playErrorSound = (): void => {
+      const ctx = getAudioCtx();
+      if (!ctx) {
+        return;
       }
-      const ctx = audioCtxRef.current;
 
       const now = ctx.currentTime;
       const osc = ctx.createOscillator();
@@ -349,9 +404,30 @@ export function AppProvider({
       osc.stop(now + 0.21);
     };
 
-    const triggerMistake = (): void => {
+    const playSuccessSound = (): void => {
+      const ctx = getAudioCtx();
+      if (!ctx) {
+        return;
+      }
+
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(560, now);
+      osc.frequency.exponentialRampToValueAtTime(780, now + 0.09);
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.05, now + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.13);
+    };
+
+    const triggerMistake = (wrongCell: Cell | null): void => {
       playErrorSound();
-      dispatch({ type: 'START_RECOVERY' });
+      dispatch({ type: 'START_RECOVERY', wrongCell });
       if (mistakeTimerRef.current !== null) {
         window.clearTimeout(mistakeTimerRef.current);
       }
@@ -369,14 +445,16 @@ export function AppProvider({
 
       const expected = current.danceSequence[current.playerStepIndex];
       const nextPos = moveCell(current.playerPos, direction);
+      const wrongCell = inBounds(nextPos) ? nextPos : null;
 
       if (!inBounds(nextPos) || expected !== direction) {
-        triggerMistake();
+        triggerMistake(wrongCell);
         return;
       }
 
       const nextIndex = current.playerStepIndex + 1;
       const complete = nextIndex >= current.danceSequence.length;
+      playSuccessSound();
       dispatch({
         type: 'PLAYER_SUCCESS',
         nextPos,
@@ -419,11 +497,6 @@ export function AppProvider({
       window.clearTimeout(mistakeTimerRef.current);
       mistakeTimerRef.current = null;
     }
-    try {
-      sessionStorage.removeItem(FIRST_LEVEL_SESSION_KEY);
-    } catch {
-      /* ignore */
-    }
   };
 
   const resetGame = (): void => {
@@ -431,11 +504,6 @@ export function AppProvider({
     if (mistakeTimerRef.current !== null) {
       window.clearTimeout(mistakeTimerRef.current);
       mistakeTimerRef.current = null;
-    }
-    try {
-      sessionStorage.removeItem(FIRST_LEVEL_SESSION_KEY);
-    } catch {
-      /* ignore */
     }
   };
 
@@ -459,6 +527,7 @@ export function AppProvider({
       showBeePos,
       playerPos: state.playerPos,
       isRecovering: state.isRecovering,
+      lastWrongCell: state.lastWrongCell,
       lastCompletedPath: state.lastCompletedPath,
       restartGame,
       resetGame,

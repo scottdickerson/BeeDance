@@ -9,6 +9,9 @@ export const STARTING_MOVES = 5;
 /** sessionStorage key for the first level the user played this session (used for "Tap here" hint). */
 export const FIRST_LEVEL_SESSION_KEY = 'beecool-first-level-session';
 
+/** sessionStorage key: set once we have shown "Tap here" this session so we do not show it again. */
+export const TAP_HERE_SHOWN_SESSION_KEY = 'beecool-tap-here-shown';
+
 /** Base countdown time (seconds) for the player phase. Override with VITE_PLAYER_BASE_TIME_SECONDS. */
 export const PLAYER_BASE_TIME_SECONDS = parseEnvNumber(
   import.meta.env.VITE_PLAYER_BASE_TIME_SECONDS,

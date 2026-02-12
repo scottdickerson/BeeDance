@@ -2,11 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { useMemo } from 'react';
 import { useAppContext } from '../context/AppContext';
 import {
-  FIRST_LEVEL_SESSION_KEY,
   GRID_SIZE,
   buildPath,
   cellToDirection,
-  moveCell,
   type Cell
 } from '../constants';
 import { Bee } from './Bee';
@@ -32,9 +30,9 @@ export function Grid(): JSX.Element {
     startCell,
     danceSequence,
     playerStepIndex,
+    lastWrongCell,
     lastCompletedPath,
-    submitMove,
-    level
+    submitMove
   } = useAppContext();
 
   const leaderTrailPoints = useMemo(
@@ -47,27 +45,15 @@ export function Grid(): JSX.Element {
   );
   const [leaderMoving, setLeaderMoving] = useState(false);
   const [playerMoving, setPlayerMoving] = useState(false);
+  const [correctPulseCell, setCorrectPulseCell] = useState<Cell | null>(null);
+  const [wrongPulseCell, setWrongPulseCell] = useState<Cell | null>(null);
   const leaderTimerRef = useRef<number | null>(null);
   const playerTimerRef = useRef<number | null>(null);
+  const pulseTimerRef = useRef<number | null>(null);
+  const wrongPulseTimerRef = useRef<number | null>(null);
+  const prevStepIndexRef = useRef(playerStepIndex);
   const prevLeaderPosRef = useRef(showBeePos);
   const prevPlayerPosRef = useRef(playerPos);
-  const firstLevelSession = (() => {
-    try {
-      const stored = sessionStorage.getItem(FIRST_LEVEL_SESSION_KEY);
-      if (stored == null) return 1;
-      const n = parseInt(stored, 10);
-      return Number.isNaN(n) || n < 1 ? 1 : n;
-    } catch {
-      return 1;
-    }
-  })();
-  const showTapHere =
-    level === firstLevelSession &&
-    phase === 'player' &&
-    playerStepIndex === 0 &&
-    !isRecovering &&
-    danceSequence.length > 0;
-  const firstTapCell = showTapHere ? moveCell(startCell, danceSequence[0]) : null;
 
   const beesShareCell = showBeePos.row === playerPos.row && showBeePos.col === playerPos.col;
   const atStartPair = phase === 'showing' && beesShareCell;
@@ -128,14 +114,54 @@ export function Grid(): JSX.Element {
       if (playerTimerRef.current !== null) {
         window.clearTimeout(playerTimerRef.current);
       }
+      if (pulseTimerRef.current !== null) {
+        window.clearTimeout(pulseTimerRef.current);
+      }
+      if (wrongPulseTimerRef.current !== null) {
+        window.clearTimeout(wrongPulseTimerRef.current);
+      }
     },
     []
   );
+
+  useEffect(() => {
+    const increased = playerStepIndex > prevStepIndexRef.current;
+    prevStepIndexRef.current = playerStepIndex;
+    if (!increased || phase !== 'player') {
+      if (phase !== 'player' && correctPulseCell !== null) {
+        setCorrectPulseCell(null);
+      }
+      return;
+    }
+    setCorrectPulseCell(playerPos);
+    if (pulseTimerRef.current !== null) {
+      window.clearTimeout(pulseTimerRef.current);
+    }
+    pulseTimerRef.current = window.setTimeout(() => {
+      setCorrectPulseCell(null);
+      pulseTimerRef.current = null;
+    }, 220);
+  }, [playerStepIndex, playerPos, phase, correctPulseCell]);
+
+  useEffect(() => {
+    if (!lastWrongCell) {
+      return;
+    }
+    setWrongPulseCell(lastWrongCell);
+    if (wrongPulseTimerRef.current !== null) {
+      window.clearTimeout(wrongPulseTimerRef.current);
+    }
+    wrongPulseTimerRef.current = window.setTimeout(() => {
+      setWrongPulseCell(null);
+      wrongPulseTimerRef.current = null;
+    }, 220);
+  }, [lastWrongCell]);
 
   const gridRef = useRef<HTMLDivElement>(null);
 
   const handleGridPointer = (e: React.PointerEvent): void => {
     if (phase !== 'player' || isRecovering) return;
+
     const target = e.target as HTMLElement;
     let row: number;
     let col: number;
@@ -154,12 +180,13 @@ export function Grid(): JSX.Element {
     } else {
       return;
     }
+
     if (Number.isNaN(row) || Number.isNaN(col)) return;
     const direction = cellToDirection(playerPos, { row, col });
-    if (direction) {
-      e.preventDefault();
-      submitMove(direction);
-    }
+    if (!direction) return;
+
+    e.preventDefault();
+    submitMove(direction);
   };
 
   return (
@@ -210,10 +237,12 @@ export function Grid(): JSX.Element {
         {Array.from({ length: GRID_SIZE * GRID_SIZE }, (_, idx) => {
           const row = Math.floor(idx / GRID_SIZE);
           const col = idx % GRID_SIZE;
+          const isPulse = correctPulseCell?.row === row && correctPulseCell?.col === col;
+          const isWrongPulse = wrongPulseCell?.row === row && wrongPulseCell?.col === col;
           return (
             <div
               key={idx}
-              className={styles.cell}
+              className={`${styles.cell} ${isPulse ? styles.cellPulse : ''} ${isWrongPulse ? styles.cellWrongPulse : ''}`}
               data-row={row}
               data-col={col}
               role="button"
@@ -222,18 +251,6 @@ export function Grid(): JSX.Element {
             />
           );
         })}
-
-        {firstTapCell && (
-          <div
-            className={styles.tapHere}
-            style={{
-              transform: `translate(calc(var(--cell-size) * ${firstTapCell.col}), calc(var(--cell-size) * ${firstTapCell.row}))`
-            }}
-            aria-hidden
-          >
-            <span className={styles.tapHereLabel}>Tap here</span>
-          </div>
-        )}
 
         {atEndPair ? (
           <VictoryDance cell={showBeePos} />

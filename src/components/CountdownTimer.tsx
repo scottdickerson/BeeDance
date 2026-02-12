@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { Bee } from './Bee';
+import { UrgencyText } from './UrgencyText';
 import styles from './CountdownTimer.module.css';
 
 /** Flower: petals + center (left side of timer) */
@@ -35,10 +36,7 @@ const FLOWER_ICON = (
 export function CountdownTimer(): JSX.Element {
   const { honeyProgress, timeLeft, phase } = useAppContext();
   const progressAtLevelClearRef = useRef(1);
-
-  if (phase === 'showing') {
-    return <div className={styles.spacer} aria-hidden="true" />;
-  }
+  const hiddenDuringShow = phase === 'showing';
 
   if (phase === 'player') {
     progressAtLevelClearRef.current = honeyProgress;
@@ -65,7 +63,13 @@ export function CountdownTimer(): JSX.Element {
             : 'frown';
 
   return (
-    <div className={styles.meter} aria-label="Countdown timer">
+    <div
+      className={`${styles.meter} ${hiddenDuringShow ? styles.fadedOut : styles.fadedIn}`}
+      aria-label="Countdown timer"
+    >
+      <div className={styles.urgencyInline}>
+        <UrgencyText />
+      </div>
       <div
         className={styles.track}
         style={{ ['--timer-progress' as string]: String(visualProgress) }}
@@ -90,7 +94,7 @@ export function CountdownTimer(): JSX.Element {
         </div>
       </div>
       <div className={styles.meterText}>
-        {phase === 'player' ? `${timeLeft.toFixed(1)}s` : '\u00a0'}
+        {phase === 'player' ? `${timeLeft.toFixed(1)}s` : ' '}
       </div>
     </div>
   );
