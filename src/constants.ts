@@ -21,7 +21,15 @@ export const KEY_TO_DIRECTION: Record<string, Direction | undefined> = {
   ArrowUp: 'up',
   ArrowDown: 'down',
   ArrowLeft: 'left',
-  ArrowRight: 'right'
+  ArrowRight: 'right',
+  w: 'up',
+  a: 'left',
+  s: 'down',
+  d: 'right',
+  W: 'up',
+  A: 'left',
+  S: 'down',
+  D: 'right'
 };
 
 export function inBounds(cell: Cell): boolean {

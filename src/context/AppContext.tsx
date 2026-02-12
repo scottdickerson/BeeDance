@@ -388,7 +388,7 @@ export function AppProvider({
       : state.phase === 'player'
         ? state.isRecovering
           ? 'Wrong move. Bee is stunned...'
-          : 'Repeat the dance: arrow keys or tap/click cells'
+          : 'Repeat the dance: arrows / WASD or tap/click cells'
         : state.phase === 'level-clear'
           ? 'Sweet! Next dance gets longer.'
           : 'Buzz over. Press restart.';
