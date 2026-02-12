@@ -67,13 +67,16 @@ export function GameOverModal({ titleScreenVisible = false, onQuit }: GameOverMo
 
   return (
     <div className={styles.backdrop} role="dialog" aria-modal="true" aria-labelledby="game-over-title">
+      <div className={styles.beeFlightLayer} aria-hidden>
+        <div className={styles.beeWrap}>
+          <Bee role="leader" leaderMood="frown" moving={false} dancing={false} />
+        </div>
+      </div>
       <div className={styles.modal}>
         <h2 id="game-over-title" className={styles.title}>
           Time&apos;s up!
         </h2>
-        <div className={styles.beeWrap}>
-          <Bee role="leader" leaderMood="frown" moving={false} dancing={false} />
-        </div>
+        <div className={styles.beeSpacer} />
         <p className={styles.message}>The honey didn&apos;t make it to the hive. Try again!</p>
         <div className={styles.buttonRow}>
           <button type="button" className={styles.restartButton} onClick={restartGame}>

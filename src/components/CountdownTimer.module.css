@@ -49,8 +49,8 @@
 }
 
 .honeycombIcon {
-  width: 28px;
-  height: 28px;
+  width: 34px;
+  height: 34px;
   background: linear-gradient(135deg, #ffc107 0%, #e8a317 50%, #b8860b 100%);
   mask: url(../images/HoneyComb.svg) center / contain no-repeat;
   -webkit-mask: url(../images/HoneyComb.svg) center / contain no-repeat;

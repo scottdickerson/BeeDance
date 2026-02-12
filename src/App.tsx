@@ -47,12 +47,16 @@ function AppContent({
     setInstructionsVisible(false);
   };
 
-  const showInstructions = (): void => {
+  /** Go to instructions and hide title (used when starting from title so users see instructions first). */
+  const goToInstructions = (): void => {
+    setTitleVisible(false);
     setInstructionsVisible(true);
   };
 
-  const hideInstructions = (): void => {
+  /** Leave instructions and return to title screen. */
+  const goBackToTitle = (): void => {
     setInstructionsVisible(false);
+    setTitleVisible(true);
   };
 
   useEffect(() => {
@@ -114,14 +118,9 @@ function AppContent({
 
   return (
     <div className={styles.appShell}>
-      {titleVisible && (
-        <TitleScreen
-          onStart={dismissTitleAndResetIdle}
-          onShowInstructions={showInstructions}
-        />
-      )}
+      {titleVisible && <TitleScreen onStart={goToInstructions} />}
       {instructionsVisible && (
-        <InstructionsScreen onBack={hideInstructions} onStart={dismissTitleAndResetIdle} />
+        <InstructionsScreen onBack={goBackToTitle} onStart={dismissTitleAndResetIdle} />
       )}
       <div className={styles.card}>
         <header className={styles.headerSection}>
@@ -164,7 +163,7 @@ export default function App(): JSX.Element {
   const [titleVisible, setTitleVisible] = useState(true);
   const [instructionsVisible, setInstructionsVisible] = useState(false);
   return (
-    <AppProvider gameActive={!titleVisible}>
+    <AppProvider gameActive={!titleVisible && !instructionsVisible}>
       <AppContent
         titleVisible={titleVisible}
         setTitleVisible={setTitleVisible}

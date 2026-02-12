@@ -1,7 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { useMemo } from 'react';
 import { useAppContext } from '../context/AppContext';
-import { GRID_SIZE, buildPath, cellToDirection, type Cell } from '../constants';
+import {
+  FIRST_LEVEL_SESSION_KEY,
+  GRID_SIZE,
+  buildPath,
+  cellToDirection,
+  moveCell,
+  type Cell
+} from '../constants';
 import { Bee } from './Bee';
 import { VictoryDance } from './VictoryDance';
 import styles from './Grid.module.css';
@@ -26,7 +33,8 @@ export function Grid(): JSX.Element {
     danceSequence,
     playerStepIndex,
     lastCompletedPath,
-    submitMove
+    submitMove,
+    level
   } = useAppContext();
 
   const leaderTrailPoints = useMemo(
@@ -43,6 +51,24 @@ export function Grid(): JSX.Element {
   const playerTimerRef = useRef<number | null>(null);
   const prevLeaderPosRef = useRef(showBeePos);
   const prevPlayerPosRef = useRef(playerPos);
+  const firstLevelSession = (() => {
+    try {
+      const stored = sessionStorage.getItem(FIRST_LEVEL_SESSION_KEY);
+      if (stored == null) return 1;
+      const n = parseInt(stored, 10);
+      return Number.isNaN(n) || n < 1 ? 1 : n;
+    } catch {
+      return 1;
+    }
+  })();
+  const showTapHere =
+    level === firstLevelSession &&
+    phase === 'player' &&
+    playerStepIndex === 0 &&
+    !isRecovering &&
+    danceSequence.length > 0;
+  const firstTapCell = showTapHere ? moveCell(startCell, danceSequence[0]) : null;
+
   const beesShareCell = showBeePos.row === playerPos.row && showBeePos.col === playerPos.col;
   const atStartPair = phase === 'showing' && beesShareCell;
   const atEndPair = phase === 'level-clear' && beesShareCell;
@@ -50,7 +76,15 @@ export function Grid(): JSX.Element {
   const isHappyPair = atEndPair;
   const MOVE_WIGGLE_MS = 820;
   const leaderMood: 'smile' | 'flat' | 'frown' =
-    phase !== 'player' ? 'smile' : honeyProgress > 0.6 ? 'smile' : honeyProgress > 0.3 ? 'flat' : 'frown';
+    phase === 'game-over'
+      ? 'frown'
+      : phase !== 'player'
+        ? 'smile'
+        : honeyProgress > 0.6
+          ? 'smile'
+          : honeyProgress > 0.3
+            ? 'flat'
+            : 'frown';
 
   useEffect(() => {
     const prev = prevLeaderPosRef.current;
@@ -188,6 +222,18 @@ export function Grid(): JSX.Element {
             />
           );
         })}
+
+        {firstTapCell && (
+          <div
+            className={styles.tapHere}
+            style={{
+              transform: `translate(calc(var(--cell-size) * ${firstTapCell.col}), calc(var(--cell-size) * ${firstTapCell.row}))`
+            }}
+            aria-hidden
+          >
+            <span className={styles.tapHereLabel}>Tap here</span>
+          </div>
+        )}
 
         {atEndPair ? (
           <VictoryDance cell={showBeePos} />

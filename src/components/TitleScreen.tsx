@@ -6,7 +6,6 @@ const BUZZ_TITLE_SRC = '/sounds/buzz-title.mp3';
 
 interface TitleScreenProps {
   onStart: () => void;
-  onShowInstructions?: () => void;
 }
 
 const TITLE_BEES: Array<{
@@ -31,7 +30,7 @@ const TITLE_BEES: Array<{
   { id: 'amber-2', role: 'follower', color: 'amber', path: 'a', duration: '8.2s', delay: '-1.9s', style: { left: '30%', bottom: '18%' } }
 ];
 
-export function TitleScreen({ onStart, onShowInstructions }: TitleScreenProps): JSX.Element {
+export function TitleScreen({ onStart }: TitleScreenProps): JSX.Element {
   const audioRef = useRef<HTMLAudioElement>(null);
 
   useEffect(() => {
@@ -75,11 +74,6 @@ export function TitleScreen({ onStart, onShowInstructions }: TitleScreenProps): 
           <button type="button" className={styles.startButton} onClick={(e) => { e.stopPropagation(); onStart(); }}>
             Start
           </button>
-          {onShowInstructions && (
-            <button type="button" className={styles.howToPlayButton} onClick={(e) => { e.stopPropagation(); onShowInstructions(); }}>
-              How to play
-            </button>
-          )}
         </div>
       </div>
     </div>

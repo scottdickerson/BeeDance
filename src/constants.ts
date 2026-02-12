@@ -6,6 +6,9 @@ export type Cell = { row: number; col: number };
 export const GRID_SIZE = 4;
 export const STARTING_MOVES = 5;
 
+/** sessionStorage key for the first level the user played this session (used for "Tap here" hint). */
+export const FIRST_LEVEL_SESSION_KEY = 'beecool-first-level-session';
+
 /** Base countdown time (seconds) for the player phase. Override with VITE_PLAYER_BASE_TIME_SECONDS. */
 export const PLAYER_BASE_TIME_SECONDS = parseEnvNumber(
   import.meta.env.VITE_PLAYER_BASE_TIME_SECONDS,
@@ -87,10 +90,9 @@ export function randomStartCell(): Cell {
 }
 
 export function extendDance(sequence: Direction[], startCell: Cell): Direction[] {
-  let cursor = startCell;
-  for (const step of sequence) {
-    cursor = moveCell(cursor, step);
-  }
+  const pathCells = buildPath(startCell, sequence);
+  const visited = new Set(pathCells.map((c) => `${c.row},${c.col}`));
+  let cursor = pathCells[pathCells.length - 1];
 
   const lastDirection = sequence.length > 0 ? sequence[sequence.length - 1] : null;
   const backwards = lastDirection ? REVERSE_DIRECTION[lastDirection] : null;
@@ -98,9 +100,12 @@ export function extendDance(sequence: Direction[], startCell: Cell): Direction[]
   let options = (Object.keys(DIRECTION_DELTAS) as Direction[]).filter((direction) =>
     inBounds(moveCell(cursor, direction))
   );
-  // Prefer not to step backwards on the same path; only allow backwards if it's the only option
   if (backwards && options.length > 1) {
     options = options.filter((d) => d !== backwards);
+  }
+  const freshOptions = options.filter((d) => !visited.has(`${moveCell(cursor, d).row},${moveCell(cursor, d).col}`));
+  if (freshOptions.length > 0) {
+    options = freshOptions;
   }
   const next = options[randomInt(options.length)];
   return [...sequence, next];

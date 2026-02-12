@@ -45,7 +45,24 @@ export function CountdownTimer(): JSX.Element {
   }
 
   const visualProgress =
-    phase === 'player' ? honeyProgress : phase === 'level-clear' ? progressAtLevelClearRef.current : 1;
+    phase === 'player'
+      ? honeyProgress
+      : phase === 'level-clear'
+        ? progressAtLevelClearRef.current
+        : phase === 'game-over'
+          ? 0
+          : 1;
+
+  const timerMood: 'smile' | 'flat' | 'frown' =
+    phase === 'game-over'
+      ? 'frown'
+      : phase !== 'player'
+        ? 'smile'
+        : honeyProgress > 0.6
+          ? 'smile'
+          : honeyProgress > 0.3
+            ? 'flat'
+            : 'frown';
 
   return (
     <div className={styles.meter} aria-label="Countdown timer">
@@ -57,7 +74,15 @@ export function CountdownTimer(): JSX.Element {
         <div className={styles.trackLine} aria-hidden="true" />
         <div className={styles.drop} aria-hidden="true">
           <div className={styles.timerBee}>
-            <Bee role="follower" color="amber" moving={phase === 'player'} dancing={phase === 'player'} pollen buttWiggle />
+            <Bee
+              role="follower"
+              color="amber"
+              followerMood={timerMood}
+              moving={phase === 'player'}
+              dancing={phase === 'player'}
+              pollen
+              buttWiggle
+            />
           </div>
         </div>
         <div className={styles.honeycombWrap}>

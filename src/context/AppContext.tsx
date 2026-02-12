@@ -11,6 +11,7 @@ import type { Cell, Direction, Phase } from '../constants';
 import {
   buildPath,
   extendDance,
+  FIRST_LEVEL_SESSION_KEY,
   inBounds,
   KEY_TO_DIRECTION,
   LEVEL_CLEAR_MS,
@@ -187,6 +188,7 @@ export interface AppContextValue {
   showIndex: number;
   startCell: Cell;
   timeLeft: number;
+  totalPlayerTime: number;
   statusText: string;
   playerProgress: number;
   honeyProgress: number;
@@ -282,6 +284,17 @@ export function AppProvider({
       }
     };
   }, [gameActive, state.phase, state.danceSequence.length, totalPlayerTime]);
+
+  useEffect(() => {
+    if (!gameActive || state.phase !== 'player') return;
+    try {
+      if (sessionStorage.getItem(FIRST_LEVEL_SESSION_KEY) == null) {
+        sessionStorage.setItem(FIRST_LEVEL_SESSION_KEY, String(state.level));
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [gameActive, state.phase, state.level]);
 
   useEffect(() => {
     if (!gameActive || state.phase !== 'player' || state.isRecovering) {
@@ -406,6 +419,11 @@ export function AppProvider({
       window.clearTimeout(mistakeTimerRef.current);
       mistakeTimerRef.current = null;
     }
+    try {
+      sessionStorage.removeItem(FIRST_LEVEL_SESSION_KEY);
+    } catch {
+      /* ignore */
+    }
   };
 
   const resetGame = (): void => {
@@ -413,6 +431,11 @@ export function AppProvider({
     if (mistakeTimerRef.current !== null) {
       window.clearTimeout(mistakeTimerRef.current);
       mistakeTimerRef.current = null;
+    }
+    try {
+      sessionStorage.removeItem(FIRST_LEVEL_SESSION_KEY);
+    } catch {
+      /* ignore */
     }
   };
 
@@ -429,6 +452,7 @@ export function AppProvider({
       showIndex: state.showIndex,
       startCell: state.startCell,
       timeLeft: state.timeLeft,
+      totalPlayerTime,
       statusText,
       playerProgress,
       honeyProgress,
@@ -440,7 +464,7 @@ export function AppProvider({
       resetGame,
       submitMove: (direction: Direction) => tryMoveRef.current(direction)
     }),
-    [state, dancePath, statusText, playerProgress, honeyProgress, showBeePos]
+    [state, dancePath, totalPlayerTime, statusText, playerProgress, honeyProgress, showBeePos]
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
