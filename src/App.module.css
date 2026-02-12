@@ -1,0 +1,84 @@
+.appShell {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 14px;
+}
+
+.card {
+  width: min(1240px, 100%);
+  border-radius: 26px;
+  background: rgba(255, 248, 224, 0.92);
+  box-shadow: 0 14px 38px rgba(82, 47, 0, 0.22);
+  padding: 16px;
+  backdrop-filter: blur(5px);
+  border: 2px solid rgba(255, 183, 44, 0.4);
+}
+
+.headerSection {
+  --cell-size: 132px;
+  width: calc(4 * var(--cell-size));
+  max-width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 8px;
+}
+
+.title {
+  margin: 0 0 8px;
+  font-family: 'Fredoka', sans-serif;
+  font-size: clamp(1.25rem, 2vw, 1.8rem);
+  letter-spacing: 0.02em;
+  text-align: center;
+}
+
+.topRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.badge {
+  font-weight: 700;
+  border-radius: 999px;
+  background: #fff7d8;
+  border: 1px solid #f3be4b;
+  padding: 5px 11px;
+  font-size: 0.84rem;
+}
+
+.gridSection {
+  --cell-size: 132px;
+  width: calc(4 * var(--cell-size));
+  max-width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.urgencyWrap {
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+@media (max-width: 720px) {
+  .card {
+    padding: 10px;
+    border-radius: 16px;
+  }
+
+  .headerSection {
+    --cell-size: 88px;
+  }
+
+  .gridSection {
+    --cell-size: 88px;
+  }
+}

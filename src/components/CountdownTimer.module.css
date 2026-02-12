@@ -1,0 +1,100 @@
+.meter {
+  position: relative;
+  margin-top: 14px;
+  margin-bottom: 0;
+}
+
+.track {
+  --timer-end-width: 34px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+  padding: 0 4px;
+}
+
+.flowerWrap {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--timer-end-width);
+  height: 34px;
+  margin-right: 2px;
+  z-index: 2;
+}
+
+.flowerIcon {
+  width: 26px;
+  height: 26px;
+}
+
+.honeycombWrap {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--timer-end-width);
+  height: 34px;
+  margin-left: 2px;
+  z-index: 2;
+}
+
+.honeycombIcon {
+  width: 28px;
+  height: 28px;
+  background: linear-gradient(135deg, #ffc107 0%, #e8a317 50%, #b8860b 100%);
+  mask: url(../images/HoneyComb.svg) center / contain no-repeat;
+  -webkit-mask: url(../images/HoneyComb.svg) center / contain no-repeat;
+}
+
+.trackLine {
+  position: absolute;
+  left: calc(var(--timer-end-width) + 6px);
+  right: calc(var(--timer-end-width) + 6px);
+  top: 50%;
+  height: 3px;
+  transform: translateY(-50%);
+  background: linear-gradient(90deg, rgba(255, 235, 59, 0.45) 0%, rgba(255, 193, 7, 0.5) 50%, rgba(232, 163, 23, 0.5) 100%);
+  border-radius: 2px;
+  z-index: 0;
+}
+
+.drop {
+  position: absolute;
+  left: calc(var(--timer-end-width) + 6px + (1 - var(--timer-progress, 1)) * (100% - 2 * (var(--timer-end-width) + 6px)));
+  top: 50%;
+  transform: translate(-50%, -50%);
+  animation: beeTravel 1.6s ease-in-out infinite;
+  transition: left 140ms linear;
+  z-index: 1;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.25));
+}
+
+.timerBee {
+  /* Slightly larger than half leader: follower base 44*0.8 with scale 0.85 */
+  transform: scale(0.85);
+  transform-origin: center center;
+}
+
+@keyframes beeTravel {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(1) rotate(-8deg);
+  }
+  40% {
+    transform: translate(-50%, calc(-50% + 4px)) scale(1.06) rotate(8deg);
+  }
+  70% {
+    transform: translate(-50%, -50%) scale(0.96) rotate(-4deg);
+  }
+}
+
+.meterText {
+  margin-top: 2px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: 0.78rem;
+}

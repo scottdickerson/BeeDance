@@ -1,0 +1,109 @@
+.wrap {
+  background: linear-gradient(135deg, #fffbf0 0%, #fff4d6 50%, #ffefc4 100%);
+  border: 2px solid rgba(232, 163, 23, 0.5);
+  border-radius: 16px;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  box-shadow:
+    0 2px 8px rgba(139, 105, 20, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.label {
+  font-family: 'Fredoka', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #5c4033;
+  letter-spacing: 0.03em;
+}
+
+.steps {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #5c4033;
+}
+
+.current {
+  color: #b8860b;
+  font-size: 1.1em;
+}
+
+.sep {
+  opacity: 0.7;
+  margin: 0 1px;
+}
+
+.total {
+  color: #6b5344;
+}
+
+.unit {
+  font-weight: 600;
+  font-size: 0.8em;
+  color: #8b7355;
+  margin-left: 2px;
+}
+
+.track {
+  position: relative;
+  height: 14px;
+  border-radius: 999px;
+  background: #ffeeb7;
+  border: 1px solid #e2be58;
+  overflow: visible;
+}
+
+.fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #59d6cf 0%, #2ab5ad 50%, #1b9f98 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  transition: width 220ms ease-out;
+}
+
+.beeMarker {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  transition: left 220ms ease-out;
+  z-index: 2;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+}
+
+.beeEmoji {
+  font-size: 1.1rem;
+  line-height: 1;
+  display: block;
+}
+
+@media (max-width: 720px) {
+  .wrap {
+    padding: 10px 12px;
+    margin-bottom: 10px;
+    border-radius: 12px;
+  }
+
+  .label {
+    font-size: 0.9rem;
+  }
+
+  .steps {
+    font-size: 0.88rem;
+  }
+
+  .track {
+    height: 12px;
+  }
+}

@@ -1,0 +1,121 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(26, 59, 44, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 100;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.modal {
+  width: min(380px, 100%);
+  border-radius: 24px;
+  padding: 28px 24px;
+  background: linear-gradient(180deg, #fff8e0 0%, #fff0c8 50%, #ffe4a8 100%);
+  border: 3px solid #e8a317;
+  box-shadow: 0 20px 60px rgba(82, 47, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  animation: scaleIn 0.25s ease-out;
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.title {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #5c4033;
+  letter-spacing: 0.02em;
+}
+
+.beeWrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 0;
+  transform: scale(1.8);
+}
+
+.message {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #5c4033;
+  text-align: center;
+  line-height: 1.4;
+}
+
+.buttonRow {
+  margin-top: 8px;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.restartButton {
+  border: none;
+  border-radius: 14px;
+  padding: 14px 28px;
+  font-weight: 700;
+  font-size: 1.1rem;
+  background: linear-gradient(180deg, #e8a317 0%, #b8860b 50%, #8b6914 100%);
+  color: #fff8e0;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(139, 105, 20, 0.4);
+  border: 2px solid rgba(255, 248, 224, 0.3);
+}
+
+.restartButton:hover {
+  filter: brightness(1.08);
+  box-shadow: 0 6px 16px rgba(139, 105, 20, 0.45);
+}
+
+.restartButton:focus-visible {
+  outline: 2px solid #b8860b;
+  outline-offset: 2px;
+}
+
+.quitButton {
+  border: 2px solid #b8860b;
+  border-radius: 14px;
+  padding: 14px 28px;
+  font-weight: 700;
+  font-size: 1.1rem;
+  background: transparent;
+  color: #5c4033;
+  cursor: pointer;
+}
+
+.quitButton:hover {
+  background: rgba(232, 163, 23, 0.15);
+}
+
+.quitButton:focus-visible {
+  outline: 2px solid #b8860b;
+  outline-offset: 2px;
+}
