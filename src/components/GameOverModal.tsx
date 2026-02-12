@@ -49,6 +49,18 @@ export function GameOverModal({ titleScreenVisible = false, onQuit }: GameOverMo
     };
   }, [phase, titleScreenVisible]);
 
+  useEffect(() => {
+    if (phase !== 'game-over' || titleScreenVisible || closedForTitle) return;
+    const handleKeyDown = (e: KeyboardEvent): void => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        restartGame();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [phase, titleScreenVisible, closedForTitle, restartGame]);
+
   if (phase !== 'game-over' || titleScreenVisible || closedForTitle) {
     return null;
   }

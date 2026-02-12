@@ -17,6 +17,8 @@ import {
   makeInitialDance,
   MISTAKE_PAUSE_MS,
   moveCell,
+  PLAYER_BASE_TIME_SECONDS,
+  PLAYER_SECONDS_PER_EXTRA_STEP,
   randomStartCell,
   SHOW_STEP_MS,
   SHOW_WAIT_MS,
@@ -223,7 +225,9 @@ export function AppProvider({
   const showBeePos = dancePath[Math.min(state.showIndex, dancePath.length - 1)] ?? state.startCell;
 
   const totalPlayerTime = useMemo(
-    () => 10 + Math.max(0, (state.danceSequence.length - STARTING_MOVES) * 5),
+    () =>
+        PLAYER_BASE_TIME_SECONDS +
+        Math.max(0, (state.danceSequence.length - STARTING_MOVES) * PLAYER_SECONDS_PER_EXTRA_STEP),
     [state.danceSequence.length]
   );
 

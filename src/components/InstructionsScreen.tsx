@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Bee } from './Bee';
 import styles from './InstructionsScreen.module.css';
 
@@ -7,6 +8,17 @@ interface InstructionsScreenProps {
 }
 
 export function InstructionsScreen({ onBack, onStart }: InstructionsScreenProps): JSX.Element {
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent): void => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        onStart();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onStart]);
+
   return (
     <div className={styles.overlay} role="dialog" aria-labelledby="instructions-title" aria-modal="true">
       <div className={styles.card}>

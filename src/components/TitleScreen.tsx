@@ -43,7 +43,16 @@ export function TitleScreen({ onStart, onShowInstructions }: TitleScreenProps): 
   }, []);
 
   return (
-    <div className={styles.overlay} onClick={onStart} onKeyDown={onStart} role="button" tabIndex={0} aria-label="Start game">
+    <div
+      className={styles.overlay}
+      onClick={onStart}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') onStart();
+      }}
+      role="button"
+      tabIndex={0}
+      aria-label="Start game"
+    >
       <audio ref={audioRef} src={BUZZ_TITLE_SRC} loop aria-label="Background buzz" />
       <div className={styles.beeFlightLayer} aria-hidden>
         {TITLE_BEES.map((bee) => (

@@ -6,9 +6,9 @@ export function ProgressPattern(): JSX.Element {
   const total = danceSequence.length;
 
   return (
-    <div className={styles.wrap} aria-label={`Pattern progress: step ${playerStepIndex} of ${total}`}>
+    <div className={styles.wrap} aria-label={`Dance progress: step ${playerStepIndex} of ${total}`}>
       <div className={styles.header}>
-        <span className={styles.label}>Pattern</span>
+        <span className={styles.label}>Dance Progress</span>
         <span className={styles.steps}>
           <span className={styles.current}>{playerStepIndex}</span>
           <span className={styles.sep}>/</span>

@@ -5,6 +5,25 @@ export type Cell = { row: number; col: number };
 
 export const GRID_SIZE = 4;
 export const STARTING_MOVES = 5;
+
+/** Base countdown time (seconds) for the player phase. Override with VITE_PLAYER_BASE_TIME_SECONDS. */
+export const PLAYER_BASE_TIME_SECONDS = parseEnvNumber(
+  import.meta.env.VITE_PLAYER_BASE_TIME_SECONDS,
+  5
+);
+
+/** Extra seconds added per step beyond STARTING_MOVES. Override with VITE_PLAYER_SECONDS_PER_EXTRA_STEP. */
+export const PLAYER_SECONDS_PER_EXTRA_STEP = parseEnvNumber(
+  import.meta.env.VITE_PLAYER_SECONDS_PER_EXTRA_STEP,
+  1.5
+);
+
+function parseEnvNumber(value: string | undefined, fallback: number): number {
+  if (value == null || value === '') return fallback;
+  const n = Number(value);
+  return Number.isNaN(n) || n < 0 ? fallback : n;
+}
+
 export const SHOW_STEP_MS = 650;
 export const SHOW_WAIT_MS = 900;
 export const LEVEL_CLEAR_MS = 5_000;
@@ -15,6 +34,13 @@ export const DIRECTION_DELTAS: Record<Direction, [number, number]> = {
   down: [1, 0],
   left: [0, -1],
   right: [0, 1]
+};
+
+const REVERSE_DIRECTION: Record<Direction, Direction> = {
+  up: 'down',
+  down: 'up',
+  left: 'right',
+  right: 'left'
 };
 
 export const KEY_TO_DIRECTION: Record<string, Direction | undefined> = {
@@ -66,9 +92,16 @@ export function extendDance(sequence: Direction[], startCell: Cell): Direction[]
     cursor = moveCell(cursor, step);
   }
 
-  const options = (Object.keys(DIRECTION_DELTAS) as Direction[]).filter((direction) =>
+  const lastDirection = sequence.length > 0 ? sequence[sequence.length - 1] : null;
+  const backwards = lastDirection ? REVERSE_DIRECTION[lastDirection] : null;
+
+  let options = (Object.keys(DIRECTION_DELTAS) as Direction[]).filter((direction) =>
     inBounds(moveCell(cursor, direction))
   );
+  // Prefer not to step backwards on the same path; only allow backwards if it's the only option
+  if (backwards && options.length > 1) {
+    options = options.filter((d) => d !== backwards);
+  }
   const next = options[randomInt(options.length)];
   return [...sequence, next];
 }
