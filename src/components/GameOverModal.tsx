@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { Bee } from './Bee';
+import { ShareScores } from './ShareScores';
 import styles from './GameOverModal.module.css';
 
 const BUZZ_GAMEOVER_SRC = '/sounds/buzz-gameover.mp3';
@@ -12,7 +13,7 @@ interface GameOverModalProps {
 }
 
 export function GameOverModal({ titleScreenVisible = false, onQuit }: GameOverModalProps): JSX.Element | null {
-  const { phase, restartGame } = useAppContext();
+  const { phase, gameOverRevealComplete, restartGame, level, highScore } = useAppContext();
   const hasPlayedRef = useRef(false);
   const [closedForTitle, setClosedForTitle] = useState(false);
 
@@ -61,7 +62,7 @@ export function GameOverModal({ titleScreenVisible = false, onQuit }: GameOverMo
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [phase, titleScreenVisible, closedForTitle, restartGame]);
 
-  if (phase !== 'game-over' || titleScreenVisible || closedForTitle) {
+  if (phase !== 'game-over' || !gameOverRevealComplete || titleScreenVisible || closedForTitle) {
     return null;
   }
 
@@ -88,6 +89,7 @@ export function GameOverModal({ titleScreenVisible = false, onQuit }: GameOverMo
             </button>
           )}
         </div>
+        <ShareScores level={level} highScore={highScore} className={styles.shareScores} />
       </div>
     </div>
   );

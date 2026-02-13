@@ -12,6 +12,9 @@ export const FIRST_LEVEL_SESSION_KEY = "beecool-first-level-session";
 /** sessionStorage key: set once we have shown "Tap here" this session so we do not show it again. */
 export const TAP_HERE_SHOWN_SESSION_KEY = "beecool-tap-here-shown";
 
+/** sessionStorage key: set when user has seen instructions this session (Start from title goes straight to game). */
+export const INSTRUCTIONS_SEEN_SESSION_KEY = "beecool-instructions-seen";
+
 /** Base countdown time (seconds) for the player phase. Override with VITE_PLAYER_BASE_TIME_SECONDS. */
 export const PLAYER_BASE_TIME_SECONDS = parseEnvNumber(
   import.meta.env.VITE_PLAYER_BASE_TIME_SECONDS,
@@ -24,10 +27,21 @@ const BASE_TIME_PER_STEP =
 
 /** First extra step adds this fraction of base time per step (kept low so higher levels stay hard). */
 const EXTRA_STEP_INITIAL_FACTOR = 0.45;
-/** Base decay: each extra step adds this fraction of the previous step's bonus (lower = harder at high levels). */
-const EXTRA_STEP_DECAY_BASE: number = 0.72;
+/** Decay for first 10 levels (stepCount 5–14): less aggressive so early game is gentler. */
+const EXTRA_STEP_DECAY_FIRST_10_LEVELS = 0.82;
+/** Decay gets this much more aggressive every 5 levels after the first 10 (15–19, 20–24, …). */
+const EXTRA_STEP_DECAY_STEP_PER_5_LEVELS = 0.06;
 /** Random spread for decay per step (decay = BASE ± this range) so the curve is non-repeatable. */
 const EXTRA_STEP_DECAY_SPREAD = 0.1;
+
+/** Base decay for the given step count: gentler for steps 5–14, then more aggressive every 5 steps. */
+function getDecayBase(stepCount: number): number {
+  if (stepCount <= 14) return EXTRA_STEP_DECAY_FIRST_10_LEVELS;
+  const tier = Math.floor((stepCount - 15) / 5);
+  const decay =
+    EXTRA_STEP_DECAY_FIRST_10_LEVELS - (tier + 1) * EXTRA_STEP_DECAY_STEP_PER_5_LEVELS;
+  return Math.max(0.52, decay);
+}
 
 /** Seeded RNG (LCG) so the same stepCount yields the same curve for stable useMemo. */
 function makeSeededRandom(seed: number): () => number {
@@ -49,12 +63,13 @@ export function computeTotalPlayerTime(stepCount: number): number {
   }
   const extraSteps = stepCount - STARTING_MOVES;
   const firstExtra = BASE_TIME_PER_STEP * EXTRA_STEP_INITIAL_FACTOR;
+  const decayBase = getDecayBase(stepCount);
   const rand = makeSeededRandom(stepCount * 7919);
   let sum = 0;
   let amount = firstExtra;
   for (let k = 0; k < extraSteps; k += 1) {
     sum += amount;
-    const decay = EXTRA_STEP_DECAY_BASE + (rand() - 0.5) * 2 * EXTRA_STEP_DECAY_SPREAD;
+    const decay = decayBase + (rand() - 0.5) * 2 * EXTRA_STEP_DECAY_SPREAD;
     amount *= Math.max(0.5, Math.min(0.98, decay));
   }
   return PLAYER_BASE_TIME_SECONDS + sum;
@@ -74,9 +89,21 @@ function parseEnvNumber(value: string | undefined, fallback: number): number {
   return Number.isNaN(n) || n < 0 ? fallback : n;
 }
 
-/** Pause (ms) after leader finishes showing the path, before player's turn. Leader step pace is derived from totalPlayerTime / stepCount in AppContext. */
+/** Delay (ms) per step when the leader shows the path at level 11+ (stepCount >= 15). */
+export const SHOW_STEP_MS = 520;
+/** More forgiving delay (ms) per step for levels 1–10 (stepCount 5–14). */
+const SHOW_STEP_MS_FIRST_10_LEVELS = 680;
+
+/** Leader step delay (ms) by step count: more forgiving until level 10, then SHOW_STEP_MS. */
+export function getShowStepMs(stepCount: number): number {
+  return stepCount <= 14 ? SHOW_STEP_MS_FIRST_10_LEVELS : SHOW_STEP_MS;
+}
+
+/** Pause (ms) after leader finishes showing the path, before player's turn. */
 export const SHOW_WAIT_MS = 900;
 export const LEVEL_CLEAR_MS = 3_000;
+/** How long (ms) to show the correct path and block input before showing the game-over modal. */
+export const GAME_OVER_REVEAL_MS = 3_000;
 export const MISTAKE_PAUSE_MS = 1000;
 
 /** When player makes a mistake at 10+ steps, add this many seconds (once per 10 steps, so ~1 mistake per 10 steps is recoverable). */

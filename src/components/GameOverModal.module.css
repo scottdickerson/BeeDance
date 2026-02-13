@@ -113,6 +113,10 @@
   justify-content: center;
 }
 
+.shareScores {
+  margin-top: 4px;
+}
+
 .restartButton {
   border: none;
   border-radius: 14px;

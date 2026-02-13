@@ -36,8 +36,13 @@ export function Grid(): JSX.Element {
   } = useAppContext();
 
   const leaderTrailPoints = useMemo(
-    () => (dancePath.length > 0 ? dancePath.slice(0, showIndex + 1) : []),
-    [dancePath, showIndex]
+    () =>
+      dancePath.length > 0
+        ? phase === 'game-over'
+          ? dancePath
+          : dancePath.slice(0, showIndex + 1)
+        : [],
+    [dancePath, showIndex, phase]
   );
   const playerTrailPoints = useMemo(
     () => buildPath(startCell, danceSequence.slice(0, playerStepIndex)),
@@ -208,7 +213,7 @@ export function Grid(): JSX.Element {
           {leaderTrailPoints.length >= 2 && (
             <polyline
               className={styles.leaderTrail}
-              data-visible={phase === 'showing'}
+              data-visible={phase === 'showing' || phase === 'game-over'}
               points={pathToPoints(leaderTrailPoints)}
               fill="none"
               stroke={LEADER_TRAIL_COLOR}

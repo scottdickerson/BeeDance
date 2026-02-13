@@ -5,7 +5,9 @@ import { CountdownTimer } from './components/CountdownTimer';
 import { GameOverModal } from './components/GameOverModal';
 import { InstructionsScreen } from './components/InstructionsScreen';
 import { ProgressPattern } from './components/ProgressPattern';
+import { ShareScores } from './components/ShareScores';
 import { TitleScreen } from './components/TitleScreen';
+import { INSTRUCTIONS_SEEN_SESSION_KEY } from './constants';
 import styles from './App.module.css';
 
 const IDLE_SHOW_TITLE_MS = 120_000;
@@ -23,7 +25,7 @@ function AppContent({
   instructionsVisible,
   setInstructionsVisible
 }: AppContentProps): JSX.Element {
-  const { level, highScore, phase, danceSequence, resetGame } = useAppContext();
+  const { level, highScore, phase, danceSequence, gameOverRevealComplete, resetGame } = useAppContext();
   const idleTimerRef = useRef<number | null>(null);
   const previousTitleVisibleRef = useRef(titleVisible);
   const [celebrateLevel, setCelebrateLevel] = useState(false);
@@ -47,12 +49,30 @@ function AppContent({
     }
     setTitleVisible(false);
     setInstructionsVisible(false);
+    try {
+      sessionStorage.setItem(INSTRUCTIONS_SEEN_SESSION_KEY, '1');
+    } catch {
+      /* ignore */
+    }
   };
 
   /** Go to instructions and hide title (used when starting from title so users see instructions first). */
   const goToInstructions = (): void => {
     setTitleVisible(false);
     setInstructionsVisible(true);
+  };
+
+  /** Start from title: go straight to game if they've seen instructions this session, else show instructions. */
+  const handleTitleStart = (): void => {
+    try {
+      if (sessionStorage.getItem(INSTRUCTIONS_SEEN_SESSION_KEY) != null) {
+        dismissTitleAndResetIdle();
+        return;
+      }
+    } catch {
+      /* ignore */
+    }
+    goToInstructions();
   };
 
   /** Leave instructions and return to title screen. */
@@ -110,11 +130,14 @@ function AppContent({
 
   return (
     <div className={styles.appShell}>
-      {titleVisible && <TitleScreen onStart={goToInstructions} />}
+      {titleVisible && <TitleScreen onStart={handleTitleStart} />}
       {instructionsVisible && (
         <InstructionsScreen onBack={goBackToTitle} onStart={dismissTitleAndResetIdle} />
       )}
       <div className={styles.card}>
+        {phase === 'game-over' && !gameOverRevealComplete && (
+          <div className={styles.gameOverRevealOverlay} aria-hidden />
+        )}
         <header className={styles.headerSection}>
           <h1 className={styles.title}>Bee Cool!</h1>
           <div className={styles.topRow}>
@@ -134,6 +157,7 @@ function AppContent({
             >
               Best <span className={styles.badgeNumber}>{bestDisplay}</span>
             </div>
+            <ShareScores level={level} highScore={bestDisplay} className={styles.shareScores} />
           </div>
         </header>
 

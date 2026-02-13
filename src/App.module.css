@@ -6,6 +6,7 @@
 }
 
 .card {
+  position: relative;
   width: min(1240px, 100%);
   border-radius: 26px;
   background: rgba(255, 248, 224, 0.92);
@@ -13,6 +14,15 @@
   padding: 16px;
   backdrop-filter: blur(5px);
   border: 2px solid rgba(255, 183, 44, 0.4);
+}
+
+.gameOverRevealOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  pointer-events: auto;
+  background: rgba(26, 59, 44, 0.25);
+  border-radius: inherit;
 }
 
 .headerSection {
@@ -38,6 +48,10 @@
   justify-content: center;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+.shareScores {
+  margin-left: auto;
 }
 
 .badge {

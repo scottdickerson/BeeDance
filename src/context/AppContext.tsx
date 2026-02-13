@@ -15,12 +15,14 @@ import {
   extendDance,
   inBounds,
   KEY_TO_DIRECTION,
+  GAME_OVER_REVEAL_MS,
   LEVEL_CLEAR_MS,
   makeInitialDance,
   MISTAKE_BUFFER_SECONDS_PER_ALLOWED,
   MISTAKE_PAUSE_MS,
   moveCell,
   randomStartCell,
+  getShowStepMs,
   SHOW_WAIT_MS
 } from '../constants';
 
@@ -42,6 +44,8 @@ interface AppState {
   lastCompletedTimePerStep: number | null;
   /** Number of mistake bonuses already used this level (add time on wrong tap, up to floor(steps/10)). */
   mistakeBonusUsedThisLevel: number;
+  /** True after the game-over reveal delay; modal shows only when this is true. */
+  gameOverRevealComplete: boolean;
 }
 
 type AppAction =
@@ -60,7 +64,8 @@ type AppAction =
     }
   | { type: 'LEVEL_ADVANCE'; previousTimePerStep?: number }
   | { type: 'RESTART_ROUND' }
-  | { type: 'RESET_GAME' };
+  | { type: 'RESET_GAME' }
+  | { type: 'SET_GAME_OVER_REVEAL_COMPLETE' };
 
 const HIGH_SCORE_STORAGE_KEY = 'beecool-highscore';
 
@@ -124,7 +129,8 @@ function createInitialState(): AppState {
     lastWrongCell: null,
     lastCompletedPath: [],
     lastCompletedTimePerStep: null,
-    mistakeBonusUsedThisLevel: 0
+    mistakeBonusUsedThisLevel: 0,
+    gameOverRevealComplete: false
   };
 }
 
@@ -157,7 +163,12 @@ function appReducer(state: AppState, action: AppAction): AppState {
       }
       const next = state.timeLeft - action.amount;
       if (next <= 0) {
-        return { ...state, timeLeft: 0, phase: 'game-over' };
+        return {
+          ...state,
+          timeLeft: 0,
+          phase: 'game-over',
+          showIndex: state.danceSequence.length
+        };
       }
       return { ...state, timeLeft: next };
     }
@@ -208,7 +219,8 @@ function appReducer(state: AppState, action: AppAction): AppState {
         timeLeft: 0,
         lastCompletedPath: [],
         lastCompletedTimePerStep: action.previousTimePerStep ?? null,
-        mistakeBonusUsedThisLevel: 0
+        mistakeBonusUsedThisLevel: 0,
+        gameOverRevealComplete: false
       };
     }
     case 'RESTART_ROUND': {
@@ -227,11 +239,14 @@ function appReducer(state: AppState, action: AppAction): AppState {
         lastWrongCell: null,
         lastCompletedPath: [],
         lastCompletedTimePerStep: null,
-        mistakeBonusUsedThisLevel: 0
+        mistakeBonusUsedThisLevel: 0,
+        gameOverRevealComplete: false
       };
     }
     case 'RESET_GAME':
       return createInitialState();
+    case 'SET_GAME_OVER_REVEAL_COMPLETE':
+      return { ...state, gameOverRevealComplete: true };
     default:
       return state;
   }
@@ -258,6 +273,7 @@ export interface AppContextValue {
   isRecovering: boolean;
   lastCompletedPath: Cell[];
   lastWrongCell: Cell | null;
+  gameOverRevealComplete: boolean;
   restartGame: () => void;
   resetGame: () => void;
   submitMove: (direction: Direction) => void;
@@ -351,13 +367,13 @@ export function AppProvider({
       return;
     }
 
-    const stepCount = Math.max(1, state.danceSequence.length);
-    const showStepMs = (totalPlayerTime * 1000) / stepCount;
+    const stepCount = state.danceSequence.length;
+    const showStepMs = getShowStepMs(stepCount);
 
     dispatch({ type: 'SET_SHOW_INDEX', value: 0 });
     const timers: number[] = [];
 
-    for (let i = 1; i <= state.danceSequence.length; i += 1) {
+    for (let i = 1; i <= stepCount; i += 1) {
       const timer = window.setTimeout(() => {
         dispatch({ type: 'SET_SHOW_INDEX', value: i });
       }, i * showStepMs);
@@ -366,7 +382,7 @@ export function AppProvider({
 
     const handoffTimer = window.setTimeout(() => {
       dispatch({ type: 'BEGIN_PLAYER', totalTime: totalPlayerTime });
-    }, state.danceSequence.length * showStepMs + SHOW_WAIT_MS);
+    }, stepCount * showStepMs + SHOW_WAIT_MS);
     timers.push(handoffTimer);
 
     return () => {
@@ -413,6 +429,16 @@ export function AppProvider({
     state.timeLeft,
     totalPlayerTime
   ]);
+
+  useEffect(() => {
+    if (state.phase !== 'game-over' || state.gameOverRevealComplete) {
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      dispatch({ type: 'SET_GAME_OVER_REVEAL_COMPLETE' });
+    }, GAME_OVER_REVEAL_MS);
+    return () => window.clearTimeout(timer);
+  }, [state.phase, state.gameOverRevealComplete]);
 
   useEffect(() => {
     if (!gameActive || state.phase !== 'player') {
@@ -635,6 +661,7 @@ export function AppProvider({
       isRecovering: state.isRecovering,
       lastWrongCell: state.lastWrongCell,
       lastCompletedPath: state.lastCompletedPath,
+      gameOverRevealComplete: state.gameOverRevealComplete,
       restartGame,
       resetGame,
       submitMove: (direction: Direction) => tryMoveRef.current(direction)
