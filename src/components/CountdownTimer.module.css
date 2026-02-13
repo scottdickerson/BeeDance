@@ -2,7 +2,9 @@
   position: relative;
   margin-top: 14px;
   margin-bottom: 0;
-  min-height: 76px;
+  height: 80px;
+  display: grid;
+  grid-template-rows: 22px 44px 14px;
 }
 
 .fadedIn {
@@ -16,11 +18,11 @@
 }
 
 .urgencyInline {
-  min-height: 26px;
+  height: 22px;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
-  margin-bottom: 2px;
+  overflow: hidden;
 }
 
 .track {
@@ -29,7 +31,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 44px;
+  height: 44px;
   padding: 0 4px;
 }
 
@@ -111,10 +113,11 @@
 }
 
 .meterText {
-  min-height: 1.05em;
-  margin-top: 2px;
+  height: 14px;
   text-align: right;
   font-variant-numeric: tabular-nums;
   font-weight: 700;
   font-size: 0.78rem;
+  line-height: 1;
+  overflow: hidden;
 }

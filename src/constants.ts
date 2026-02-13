@@ -1,5 +1,5 @@
-export type Direction = 'up' | 'down' | 'left' | 'right';
-export type Phase = 'showing' | 'player' | 'level-clear' | 'game-over';
+export type Direction = "up" | "down" | "left" | "right";
+export type Phase = "showing" | "player" | "level-clear" | "game-over";
 
 export type Cell = { row: number; col: number };
 
@@ -7,65 +7,117 @@ export const GRID_SIZE = 4;
 export const STARTING_MOVES = 5;
 
 /** sessionStorage key for the first level the user played this session (used for "Tap here" hint). */
-export const FIRST_LEVEL_SESSION_KEY = 'beecool-first-level-session';
+export const FIRST_LEVEL_SESSION_KEY = "beecool-first-level-session";
 
 /** sessionStorage key: set once we have shown "Tap here" this session so we do not show it again. */
-export const TAP_HERE_SHOWN_SESSION_KEY = 'beecool-tap-here-shown';
+export const TAP_HERE_SHOWN_SESSION_KEY = "beecool-tap-here-shown";
 
 /** Base countdown time (seconds) for the player phase. Override with VITE_PLAYER_BASE_TIME_SECONDS. */
 export const PLAYER_BASE_TIME_SECONDS = parseEnvNumber(
   import.meta.env.VITE_PLAYER_BASE_TIME_SECONDS,
-  5
+  3
 );
 
-/** Extra seconds added per step beyond STARTING_MOVES. Override with VITE_PLAYER_SECONDS_PER_EXTRA_STEP. */
-export const PLAYER_SECONDS_PER_EXTRA_STEP = parseEnvNumber(
-  import.meta.env.VITE_PLAYER_SECONDS_PER_EXTRA_STEP,
-  1.5
-);
+/** Initial time-per-step (base time spread over the first STARTING_MOVES steps). */
+const BASE_TIME_PER_STEP =
+  PLAYER_BASE_TIME_SECONDS / STARTING_MOVES;
+
+/** First extra step adds this fraction of base time per step (kept low so higher levels stay hard). */
+const EXTRA_STEP_INITIAL_FACTOR = 0.45;
+/** Base decay: each extra step adds this fraction of the previous step's bonus (lower = harder at high levels). */
+const EXTRA_STEP_DECAY_BASE: number = 0.72;
+/** Random spread for decay per step (decay = BASE ± this range) so the curve is non-repeatable. */
+const EXTRA_STEP_DECAY_SPREAD = 0.1;
+
+/** Seeded RNG (LCG) so the same stepCount yields the same curve for stable useMemo. */
+function makeSeededRandom(seed: number): () => number {
+  let s = seed;
+  return () => {
+    s = (s * 1664525 + 1013904223) >>> 0;
+    return s / 0xffff_ffff;
+  };
+}
+
+/**
+ * Total countdown time (seconds) for a given step count. Base time for the first STARTING_MOVES
+ * steps; each extra step adds slightly less than the initial time per step, with decay varied
+ * randomly per step (seeded by stepCount) so the curve is non-repeatable across levels.
+ */
+export function computeTotalPlayerTime(stepCount: number): number {
+  if (stepCount <= STARTING_MOVES) {
+    return PLAYER_BASE_TIME_SECONDS;
+  }
+  const extraSteps = stepCount - STARTING_MOVES;
+  const firstExtra = BASE_TIME_PER_STEP * EXTRA_STEP_INITIAL_FACTOR;
+  const rand = makeSeededRandom(stepCount * 7919);
+  let sum = 0;
+  let amount = firstExtra;
+  for (let k = 0; k < extraSteps; k += 1) {
+    sum += amount;
+    const decay = EXTRA_STEP_DECAY_BASE + (rand() - 0.5) * 2 * EXTRA_STEP_DECAY_SPREAD;
+    amount *= Math.max(0.5, Math.min(0.98, decay));
+  }
+  return PLAYER_BASE_TIME_SECONDS + sum;
+}
+
+/** Random factor for adaptive time (0.97–1.03) so adaptive levels are non-repeatable. Seed from stepCount and prior pace. */
+export function adaptiveTimeRandomFactor(stepCount: number, lastCompletedTimePerStep: number): number {
+  const seed = (stepCount * 7919 + Math.floor(lastCompletedTimePerStep * 10000)) >>> 0;
+  const r = (seed * 1664525 + 1013904223) >>> 0;
+  const u = r / 0xffff_ffff;
+  return 0.97 + u * 0.06;
+}
 
 function parseEnvNumber(value: string | undefined, fallback: number): number {
-  if (value == null || value === '') return fallback;
+  if (value == null || value === "") return fallback;
   const n = Number(value);
   return Number.isNaN(n) || n < 0 ? fallback : n;
 }
 
-export const SHOW_STEP_MS = 650;
+/** Pause (ms) after leader finishes showing the path, before player's turn. Leader step pace is derived from totalPlayerTime / stepCount in AppContext. */
 export const SHOW_WAIT_MS = 900;
-export const LEVEL_CLEAR_MS = 5_000;
+export const LEVEL_CLEAR_MS = 3_000;
 export const MISTAKE_PAUSE_MS = 1000;
+
+/** When player makes a mistake at 10+ steps, add this many seconds (once per 10 steps, so ~1 mistake per 10 steps is recoverable). */
+export const MISTAKE_BUFFER_SECONDS_PER_ALLOWED = 1.2;
 
 export const DIRECTION_DELTAS: Record<Direction, [number, number]> = {
   up: [-1, 0],
   down: [1, 0],
   left: [0, -1],
-  right: [0, 1]
+  right: [0, 1],
 };
 
 const REVERSE_DIRECTION: Record<Direction, Direction> = {
-  up: 'down',
-  down: 'up',
-  left: 'right',
-  right: 'left'
+  up: "down",
+  down: "up",
+  left: "right",
+  right: "left",
 };
 
 export const KEY_TO_DIRECTION: Record<string, Direction | undefined> = {
-  ArrowUp: 'up',
-  ArrowDown: 'down',
-  ArrowLeft: 'left',
-  ArrowRight: 'right',
-  w: 'up',
-  a: 'left',
-  s: 'down',
-  d: 'right',
-  W: 'up',
-  A: 'left',
-  S: 'down',
-  D: 'right'
+  ArrowUp: "up",
+  ArrowDown: "down",
+  ArrowLeft: "left",
+  ArrowRight: "right",
+  w: "up",
+  a: "left",
+  s: "down",
+  d: "right",
+  W: "up",
+  A: "left",
+  S: "down",
+  D: "right",
 };
 
 export function inBounds(cell: Cell): boolean {
-  return cell.row >= 0 && cell.row < GRID_SIZE && cell.col >= 0 && cell.col < GRID_SIZE;
+  return (
+    cell.row >= 0 &&
+    cell.row < GRID_SIZE &&
+    cell.col >= 0 &&
+    cell.col < GRID_SIZE
+  );
 }
 
 export function moveCell(cell: Cell, direction: Direction): Cell {
@@ -77,10 +129,10 @@ export function moveCell(cell: Cell, direction: Direction): Cell {
 export function cellToDirection(from: Cell, to: Cell): Direction | undefined {
   const dRow = to.row - from.row;
   const dCol = to.col - from.col;
-  if (dRow === -1 && dCol === 0) return 'up';
-  if (dRow === 1 && dCol === 0) return 'down';
-  if (dRow === 0 && dCol === -1) return 'left';
-  if (dRow === 0 && dCol === 1) return 'right';
+  if (dRow === -1 && dCol === 0) return "up";
+  if (dRow === 1 && dCol === 0) return "down";
+  if (dRow === 0 && dCol === -1) return "left";
+  if (dRow === 0 && dCol === 1) return "right";
   return undefined;
 }
 
@@ -92,21 +144,27 @@ export function randomStartCell(): Cell {
   return { row: randomInt(GRID_SIZE), col: randomInt(GRID_SIZE) };
 }
 
-export function extendDance(sequence: Direction[], startCell: Cell): Direction[] {
+export function extendDance(
+  sequence: Direction[],
+  startCell: Cell
+): Direction[] {
   const pathCells = buildPath(startCell, sequence);
   const visited = new Set(pathCells.map((c) => `${c.row},${c.col}`));
   let cursor = pathCells[pathCells.length - 1];
 
-  const lastDirection = sequence.length > 0 ? sequence[sequence.length - 1] : null;
+  const lastDirection =
+    sequence.length > 0 ? sequence[sequence.length - 1] : null;
   const backwards = lastDirection ? REVERSE_DIRECTION[lastDirection] : null;
 
-  let options = (Object.keys(DIRECTION_DELTAS) as Direction[]).filter((direction) =>
-    inBounds(moveCell(cursor, direction))
+  let options = (Object.keys(DIRECTION_DELTAS) as Direction[]).filter(
+    (direction) => inBounds(moveCell(cursor, direction))
   );
   if (backwards && options.length > 1) {
     options = options.filter((d) => d !== backwards);
   }
-  const freshOptions = options.filter((d) => !visited.has(`${moveCell(cursor, d).row},${moveCell(cursor, d).col}`));
+  const freshOptions = options.filter(
+    (d) => !visited.has(`${moveCell(cursor, d).row},${moveCell(cursor, d).col}`)
+  );
   if (freshOptions.length > 0) {
     options = freshOptions;
   }

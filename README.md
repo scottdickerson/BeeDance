@@ -1,6 +1,6 @@
 # Bee Cool!
 
-A browser memory game: watch the leader bee’s path on the grid, then repeat it with the arrow keys or by tapping/clicking grid cells before time runs out.
+A browser memory game: watch the leader bee’s path on the grid, then repeat it with the arrow keys, WASD, or by tapping/clicking grid cells before time runs out.
 
 - **Stack:** React 18, TypeScript, Vite
 - **Docs:** [docs/GAME.md](docs/GAME.md) — architecture and how the game works
